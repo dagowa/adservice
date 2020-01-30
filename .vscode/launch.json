@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "launch",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/adservice/main.go",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "SERVICE_HOST": "localhost",
+                "SERVICE_PORT": "8080",
+                "SERVICE_LOG_REQUESTS": "true",
+                "LOGGER_LEVEL": "debug",
+                "LOGGER_TIMESTAMP": "true",
+                "LOGGER_PRETTY": "true",
+                "LOGGER_CALLER": "true"
+            },
+        }
+    ]
+}  
