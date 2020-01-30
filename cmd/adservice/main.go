@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dagowa/adservice/internal/store"
+
 	"github.com/joeshaw/envdecode"
 	"github.com/oklog/run"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -39,6 +41,13 @@ func main() {
 		defer undoMaxProcs()
 	}
 
+	psqlConn, err := store.NewPSQLConnection("")
+	if err != nil {
+		l.Fatal().Err(err).Msg("Cannot set psql connection")
+	}
+	defer psqlConn.Pool.Close()
+	
+
 	ctx, cancel := context.WithCancel(l.WithContext(ctx))
 
 	g := &run.Group{}
@@ -55,7 +64,7 @@ func main() {
 		})
 	}
 	{
-		srv := server.NewServer(ctx, &cfg.Service)
+		srv := server.NewServer(ctx, &cfg.Service, &psqlConn.Pool)
 
 		g.Add(func() error {
 			l.Info().Str("address", srv.Addr).Msg("Start listening")
