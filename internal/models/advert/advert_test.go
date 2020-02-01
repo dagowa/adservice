@@ -67,7 +67,7 @@ func TestInsert(t *testing.T) {
 		},
 	}
 
-	id, err := a.Insert(ppool)
+	id, err := a.Add(ppool)
 	if err != nil || id == 0 {
 		t.Fatalf("Cannot add new advert; err: %v", err)
 	}
