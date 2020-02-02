@@ -3,8 +3,9 @@ package advertmanager
 import (
 	"strings"
 
-	"github.com/dagowa/adservice/internal/models/advert"
 	"github.com/jackc/pgx"
+
+	"github.com/dagowa/adservice/internal/models/advert"
 )
 
 // AdvertManager implements basic manipulations with adverts
@@ -16,6 +17,8 @@ type AdvertManager struct {
 // GetOne gets one advert with basic fileds and extra fileds, described in
 // RequirementFields object
 func (am *AdvertManager) GetOne(id_advert int, rf *RequirementFileds) (*advert.Advert, error) {
+	p := am.ConnPool
+
 	selectStm := "SELECT a.id_advert, a.title, a.price, "
 	joinStm := "JOIN photo_gallery pg ON pg.id_advert=a.id_advert"
 	whereStm := "WHERE a.id_advert = $1 "
@@ -40,7 +43,7 @@ func (am *AdvertManager) GetOne(id_advert int, rf *RequirementFileds) (*advert.A
 	var mainPhotoIndex int
 	var mainPhotoLink string
 
-	row := am.ConnPool.QueryRow(selectStm+
+	row := p.QueryRow(selectStm+
 		" FROM advert a"+
 		joinStm+
 		whereStm+
@@ -103,6 +106,8 @@ func (am *AdvertManager) GetOne(id_advert int, rf *RequirementFileds) (*advert.A
 
 // GetBatch gets a batch of adverts with pre-defined filter criteria
 func (am *AdvertManager) GetBatch(sc *SortCriteria, pageNum int, pageSize int) (*[]advert.Advert, error) {
+	p := am.ConnPool
+
 	limitOffsetRow := "LIMIT $1 OFFSET $2"
 	orderByRow := makeOrderByRow(sc)
 	query := "SELECT a.id_advert, a.title, a.price, pg.photo " +
@@ -110,7 +115,7 @@ func (am *AdvertManager) GetBatch(sc *SortCriteria, pageNum int, pageSize int) (
 		"JOIN photo_gallery pg ON a.id_advert=pg.id_advert " +
 		orderByRow + limitOffsetRow
 
-	tx, err := am.ConnPool.Begin()
+	tx, err := p.Begin()
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +149,15 @@ func (am *AdvertManager) GetBatch(sc *SortCriteria, pageNum int, pageSize int) (
 
 // AddOne adds one advert to database
 func (am *AdvertManager) AddOne(a *advert.Advert) (int, error) {
+	p := am.ConnPool
+
 	addAdvQuery := "INSERT INTO public.advert( " +
 		"title, price, description) " +
 		"VALUES ($1, $2, $3) RETURNING id_advert"
 	addGalleryQuery := "INSERT INTO public.photo_gallery( " +
 		"id_advert, index, photo) " +
 		"VALUES ($1, $2, $3);"
-	tx, err := am.ConnPool.Begin()
+	tx, err := p.Begin()
 	if err != nil {
 		return 0, err
 	}
@@ -193,6 +200,8 @@ func (am *AdvertManager) AddOne(a *advert.Advert) (int, error) {
 
 // AddBatch adds a  batch of adverts to database
 func (am *AdvertManager) AddBatch(aList *[]advert.Advert) error {
+	p := am.ConnPool
+
 	addAdvQuery := "INSERT INTO public.advert( " +
 		"title, price, description) " +
 		"VALUES ($1, $2, $3) RETURNING id_advert"
@@ -200,7 +209,7 @@ func (am *AdvertManager) AddBatch(aList *[]advert.Advert) error {
 		"id_advert, index, photo) " +
 		"VALUES ($1, $2, $3);"
 
-	tx, err := am.ConnPool.Begin()
+	tx, err := p.Begin()
 	if err != nil {
 		return err
 	}
@@ -255,7 +264,9 @@ func (am *AdvertManager) AddBatch(aList *[]advert.Advert) error {
 
 // Delete designed to delete advert with certain id
 func (am *AdvertManager) Delete(id int) error {
-	tx, err := am.ConnPool.Begin()
+	p := am.ConnPool
+
+	tx, err := p.Begin()
 	if err != nil {
 		return err
 	}
@@ -272,6 +283,21 @@ func (am *AdvertManager) Delete(id int) error {
 	}
 	if err := tx.Commit(); err != nil {
 		return err
+	}
+	return nil
+}
+
+// IsExist checks advert existance by id
+func (am *AdvertManager) IsExist(id int) error {
+	p := am.ConnPool
+
+	query := "SELECT EXISTS(SELECT 1 FROM advert WHERE id_advert=$1)"
+	var isExist bool
+	if err := p.QueryRow(query, id).Scan(&isExist); err != nil {
+		return err
+	}
+	if !isExist {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
