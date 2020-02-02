@@ -1,4 +1,4 @@
-package timings
+package middleware
 
 import (
 	"net/http"
@@ -7,7 +7,8 @@ import (
 	httplogger "github.com/dagowa/adservice/pkg/logger/http"
 )
 
-func ElapsedTime(next http.Handler) http.Handler {
+// ElapsedTime designed to log the request processing time
+func (Middleware) ElapsedTime(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
