@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jackc/pgx"
-
 	"github.com/dagowa/adservice/middleware/timings"
 	"github.com/dagowa/adservice/pkg/logger"
 
@@ -16,7 +14,7 @@ import (
 )
 
 // NewServer is ...
-func NewServer(ctx context.Context, cfg *Config, p *pgx.ConnPool) *http.Server {
+func NewServer(ctx context.Context, cfg *Config) *http.Server {
 	r := chi.NewRouter()
 	httpSrv := &http.Server{Addr: cfg.Host + ":" + strconv.Itoa(cfg.Port), Handler: r}
 

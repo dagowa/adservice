@@ -10,7 +10,6 @@ import (
 type server struct {
 }
 
-
 func (s *server) ListAdverts(w http.ResponseWriter, r *http.Request) {
 	render.Respond(w, r, chi_utils.NotImplementedError())
 }

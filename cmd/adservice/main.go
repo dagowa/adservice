@@ -7,15 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dagowa/adservice/internal/store"
-
 	"github.com/joeshaw/envdecode"
 	"github.com/oklog/run"
-	"go.uber.org/automaxprocs/maxprocs"
+	"github.com/rs/zerolog/log"
 
 	"github.com/dagowa/adservice/internal/server"
 	"github.com/dagowa/adservice/pkg/logger"
-	llog "github.com/dagowa/adservice/pkg/logger/log"
 )
 
 type config struct {
@@ -26,27 +23,12 @@ type config struct {
 func main() {
 	cfg := &config{}
 	if err := envdecode.StrictDecode(cfg); err != nil {
-		llog.Fatal().Err(err).Msg("Cannot decode config envs")
+		log.Fatal().Err(err).Msg("Cannot decode config envs")
 	}
 
 	l := logger.NewLogger(&cfg.Logger)
 	ctx := l.WithContext(context.Background())
 	l.Info().Interface("config", cfg).Msg("The gathered config")
-
-	if undoMaxProcs, err := maxprocs.Set(maxprocs.Logger(func(format string, v ...interface{}) {
-		l.Info().Str("service", "maxprocs").Msgf(format, v...)
-	})); err != nil {
-		l.Warn().Err(err).Msg("Can't adjust GOMAXPROC automatically")
-	} else {
-		defer undoMaxProcs()
-	}
-
-	psqlConn, err := store.NewPSQLConnection("")
-	if err != nil {
-		l.Fatal().Err(err).Msg("Cannot set psql connection")
-	}
-	defer psqlConn.Pool.Close()
-	
 
 	ctx, cancel := context.WithCancel(l.WithContext(ctx))
 
@@ -64,7 +46,7 @@ func main() {
 		})
 	}
 	{
-		srv := server.NewServer(ctx, &cfg.Service, &psqlConn.Pool)
+		srv := server.NewServer(ctx, &cfg.Service)
 
 		g.Add(func() error {
 			l.Info().Str("address", srv.Addr).Msg("Start listening")

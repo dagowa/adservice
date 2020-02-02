@@ -1,4 +1,4 @@
-package advert_test
+package advertmanager_test
 
 import (
 	"encoding/json"
@@ -6,9 +6,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dagowa/adservice/internal/models/advert"
+	"github.com/dagowa/adservice/internal/controllers/advertmanager"
 
-	"github.com/dagowa/adservice/internal/store"
+	"github.com/joeshaw/envdecode"
+
+	"github.com/dagowa/adservice/internal/models/advert"
+	"github.com/dagowa/adservice/internal/server"
+	"github.com/dagowa/adservice/internal/storage"
 )
 
 type adverts struct {
@@ -16,11 +20,16 @@ type adverts struct {
 }
 
 func TestAddBatch(t *testing.T) {
-	pconn, err := store.NewPSQLConnection("")
+	cfg := server.Config{}
+	if err := envdecode.StrictDecode(cfg); err != nil {
+		t.Fatalf("Cannot set up config; err: %v", err)
+	}
+
+	pconn, err := storage.New().NewPostgreSQLConn(cfg.PSQLConfig)
 	if err != nil {
 		t.Fatalf("Cannot init psql conenction; err: %v", err)
 	}
-	ppool := pconn.Pool
+	ppool := pconn.Pool()
 
 	jsonFile, err := os.Open("../../../test/source_adverts.json")
 	if err != nil {
@@ -34,18 +43,26 @@ func TestAddBatch(t *testing.T) {
 	if err := json.Unmarshal(byteValue, &advList); err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
 	}
-
-	if err := advert.AddBatch(ppool, &(advList.Adverts)); err != nil {
+	am := advertmanager.AdvertManager{
+		ConnPool: ppool,
+	}
+	if err := am.AddBatch(&(advList.Adverts)); err != nil {
 		t.Fatalf("Cannot add batch; err: %v", err)
 	}
 }
 
 func TestInsert(t *testing.T) {
-	pconn, err := store.NewPSQLConnection("")
+	cfg := server.Config{}
+	if err := envdecode.StrictDecode(cfg); err != nil {
+		t.Fatalf("Cannot set up config; err: %v", err)
+	}
+
+	pconn, err := storage.New().NewPostgreSQLConn(cfg.PSQLConfig)
 	if err != nil {
 		t.Fatalf("Cannot init psql conenction; err: %v", err)
 	}
-	ppool := pconn.Pool
+	ppool := pconn.Pool()
+
 	keks := "Чтобы был пушистенький и мягОнький :3 примерно как на фото"
 	a := advert.Advert{
 		Title:       "Куплю кота",
@@ -66,12 +83,14 @@ func TestInsert(t *testing.T) {
 			},
 		},
 	}
-
-	id, err := a.Add(ppool)
+	am := advertmanager.AdvertManager{
+		ConnPool: ppool,
+	}
+	id, err := am.AddOne(&a)
 	if err != nil || id == 0 {
 		t.Fatalf("Cannot add new advert; err: %v", err)
 	}
-	if err := advert.Delete(ppool, id); err != nil {
+	if err := am.Delete(id); err != nil {
 		t.Fatalf("Cannot delete test row; err: %v", err)
 	}
 }
