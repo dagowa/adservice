@@ -42,6 +42,7 @@ func NewServer(ctx context.Context, cfg *Config, c *controllers.Controllers) *ht
 		r.With(md.Pagination).Get("/adverts", srv.ListAdverts)
 		r.With(md.FiledsValidation).Post("/adverts", srv.AddAdvert)
 		r.With(md.AdditionalFileds).Get("/advert/{id}", srv.GetAdvert)
+		r.Delete("/advert/{id}", srv.DeleteAdvert)
 
 		r.Route("/internal", func(r chi.Router) {
 			r.Mount("/debug", chimiddleware.Profiler())

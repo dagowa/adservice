@@ -73,3 +73,22 @@ func (s *server) GetAdvert(w http.ResponseWriter, r *http.Request) {
 
 	render.JSON(w, r, adverts)
 }
+
+func (s *server) DeleteAdvert(w http.ResponseWriter, r *http.Request) {
+	l := zerolog.Ctx(r.Context())
+
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		return
+	}
+
+	advertManager := s.controllers.AdvertManager()
+
+	if err := advertManager.Delete(id); err != nil {
+		l.Error().Err(err).Msg("Cannot get advert")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(advertManager.HTTPStatus)
+}
