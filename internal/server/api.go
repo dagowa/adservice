@@ -20,7 +20,7 @@ func (s *server) ListAdverts(w http.ResponseWriter, r *http.Request) {
 	adverts, err := advertManager.GetBatch(page)
 	if err != nil {
 		l.Error().Err(err).Msg("Cannot get batch of adverts")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(advertManager.HTTPStatus)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (s *server) AddAdvert(w http.ResponseWriter, r *http.Request) {
 	_, err := advertManager.AddOne(advert)
 	if err != nil {
 		l.Error().Err(err).Msg("Cannot add advert to database")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(advertManager.HTTPStatus)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (s *server) GetAdvert(w http.ResponseWriter, r *http.Request) {
 	adverts, err := advertManager.GetOne(id, af)
 	if err != nil {
 		l.Error().Err(err).Msg("Cannot get advert")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(advertManager.HTTPStatus)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (s *server) DeleteAdvert(w http.ResponseWriter, r *http.Request) {
 
 	if err := advertManager.Delete(id); err != nil {
 		l.Error().Err(err).Msg("Cannot get advert")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(advertManager.HTTPStatus)
 		return
 	}
 	w.WriteHeader(advertManager.HTTPStatus)
