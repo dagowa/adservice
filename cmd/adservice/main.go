@@ -11,7 +11,9 @@ import (
 	"github.com/oklog/run"
 	"github.com/rs/zerolog/log"
 
+	"github.com/dagowa/adservice/internal/controllers"
 	"github.com/dagowa/adservice/internal/server"
+	"github.com/dagowa/adservice/internal/storage"
 	"github.com/dagowa/adservice/pkg/logger"
 )
 
@@ -30,6 +32,14 @@ func main() {
 	ctx := l.WithContext(context.Background())
 	l.Info().Interface("config", cfg).Msg("The gathered config")
 
+	psqlConn, err := storage.New().NewPostgreSQLConn(cfg.Service.PSQLConfig)
+	if err != nil {
+		l.Fatal().Err(err).Msg("Cannot set up psql connection")
+	}
+	defer psqlConn.Close()
+
+	controllerSet := controllers.NewControllerSet(psqlConn.Pool())
+
 	ctx, cancel := context.WithCancel(l.WithContext(ctx))
 
 	g := &run.Group{}
@@ -46,7 +56,7 @@ func main() {
 		})
 	}
 	{
-		srv := server.NewServer(ctx, &cfg.Service)
+		srv := server.NewServer(ctx, &cfg.Service, &controllerSet)
 
 		g.Add(func() error {
 			l.Info().Str("address", srv.Addr).Msg("Start listening")
