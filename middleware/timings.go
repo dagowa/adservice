@@ -7,7 +7,6 @@ import (
 	httplogger "github.com/dagowa/adservice/pkg/logger/http"
 )
 
-// ElapsedTime designed to log the request processing time
 func (Middleware) ElapsedTime(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
