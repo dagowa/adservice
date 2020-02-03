@@ -5,9 +5,16 @@ import (
 	"github.com/jackc/pgx"
 )
 
-// NewAdvertManager returns advert manager interface
-func NewAdvertManager(psql *pgx.ConnPool) *advertmanager.AdvertManager {
-	return &advertmanager.AdvertManager{
-		ConnPool: psql,
+type Controllers struct {
+	ConnPool *pgx.ConnPool
+}
+
+func NewControllerSet(pp *pgx.ConnPool) Controllers {
+	return Controllers{
+		ConnPool: pp,
 	}
+}
+
+func (c *Controllers) AdvertManager() *advertmanager.AdvertManager {
+	return &advertmanager.AdvertManager{ConnPool: c.ConnPool}
 }

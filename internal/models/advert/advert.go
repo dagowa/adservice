@@ -5,7 +5,7 @@ type Advert struct {
 	Title       string   `json:"title"`
 	Price       int      `json:"price"`
 	Date        string   `json:"date,omitempty"`
-	Description *string  `json:"description,omitepmty"`
+	Description *string  `json:"description,omitempty"`
 	Gallery     *[]Photo `json:"gallery"`
 }
 

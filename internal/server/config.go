@@ -5,7 +5,6 @@ import (
 	"github.com/dagowa/adservice/internal/storage/redis"
 )
 
-// Config is ...
 type Config struct {
 	Host        string `env:"SERVICE_HOST, required"`
 	Port        int    `env:"SERVICE_PORT, required"`

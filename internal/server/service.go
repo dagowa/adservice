@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/dagowa/adservice/internal/controllers/advertmanager"
-	"github.com/dagowa/adservice/internal/storage"
+	"github.com/dagowa/adservice/internal/controllers"
+
 	"github.com/dagowa/adservice/middleware"
-	"github.com/rs/zerolog"
 
 	"github.com/dagowa/adservice/pkg/logger"
 
@@ -17,31 +16,20 @@ import (
 	chimiddleware "github.com/go-chi/chi/middleware"
 )
 
-type service struct {
-	AdvManager *advertmanager.AdvertManager
+type server struct {
+	controllers *controllers.Controllers
 }
 
 // NewServer is ...
-func NewServer(ctx context.Context, cfg *Config) *http.Server {
+func NewServer(ctx context.Context, cfg *Config, c *controllers.Controllers) *http.Server {
 	r := chi.NewRouter()
 	httpSrv := &http.Server{Addr: cfg.Host + ":" + strconv.Itoa(cfg.Port), Handler: r}
 
-	l := zerolog.Ctx(ctx)
-
-	psqlConn, err := storage.New().NewPostgreSQLConn(cfg.PSQLConfig)
-	if err != nil {
-		l.Fatal().Err(err).Msg("Cannot set up psql connection")
-	}
-	//TODO: ой блять, наверное надо отсюда его вытащить -_-
-	defer psqlConn.Close()
-
-	service := &service{
-		AdvManager: &advertmanager.AdvertManager{ConnPool: psqlConn.Pool()},
-	}
 	srv := &server{
-		service: service,
+		controllers: c,
 	}
-	md := middleware.Middleware{ConnPool: psqlConn.Pool()}
+
+	md := middleware.Middleware{ConnPool: c.ConnPool}
 
 	{
 		r.Use(httplogger.NewHandler(*logger.Ctx(ctx)))
@@ -51,9 +39,9 @@ func NewServer(ctx context.Context, cfg *Config) *http.Server {
 		if cfg.LogRequests {
 			r.Use(httplogger.RequestBody)
 		}
-		r.Get("/adverts", srv.ListAdverts)
-		r.Post("/adverts", srv.AddAdvert)
-		r.With(md.AdvertID).Get("/advert/{id}", srv.GetAdvert)
+		r.With(md.Pagination).Get("/adverts", srv.ListAdverts)
+		r.With(md.FiledsValidation).Post("/adverts", srv.AddAdvert)
+		r.With(md.AdditionalFileds).Get("/advert/{id}", srv.GetAdvert)
 
 		r.Route("/internal", func(r chi.Router) {
 			r.Mount("/debug", chimiddleware.Profiler())
