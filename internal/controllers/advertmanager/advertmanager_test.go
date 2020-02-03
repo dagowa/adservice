@@ -6,10 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dagowa/adservice/internal/controllers/advertmanager"
-
 	"github.com/joeshaw/envdecode"
 
+	"github.com/dagowa/adservice/internal/controllers/advertmanager"
 	"github.com/dagowa/adservice/internal/models/advert"
 	"github.com/dagowa/adservice/internal/server"
 	"github.com/dagowa/adservice/internal/storage"
